@@ -7,8 +7,8 @@ export const JobSchema = z.object({
   totalFiles: z.number().int().min(0).max(10000),
   completedFiles: z.number().int().min(0).max(10000),
   failedFiles: z.number().int().min(0).max(10000),
-  bytesDownloaded: z.number().finite().min(0).max(10_000_000_000_000),
-  speedBytesPerSecond: z.number().finite().min(0).max(10_000_000_000),
+  bytesDownloaded: z.number().finite().min(0).max(10000000000000),
+  speedBytesPerSecond: z.number().finite().min(0).max(10000000000),
   zipUrls: z.array(z.string().url()).max(100),
   failedZipUrl: z.string().url().optional()
 });
