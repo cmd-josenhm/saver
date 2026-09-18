@@ -1,0 +1,1 @@
+import{z}from"zod";export const schema=z.object({url:z.string().trim().url().max(2048)});export function classify(raw:string){try{const u=new URL(raw);if(u.protocol!=="https:")return"invalid";const h=u.hostname.toLowerCase().replace(/^www\\./,"");if(h==="instagram.com")return"instagram";if(h==="tiktok.com")return"tiktok";return"unsupported"}catch{return"invalid"}}
