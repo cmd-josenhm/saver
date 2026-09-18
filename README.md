@@ -1,49 +1,75 @@
 # Saver — José World
 
-Mobile-first Next.js + TypeScript application for processing publicly accessible Instagram/TikTok URLs through a separately configured, compliant media provider.
+Saver is a mobile-first Next.js/TypeScript web application for processing **public, authorized media URLs** through an external acquisition provider.
 
-## Important legal architecture decision
+## Architecture
 
-Saver does **not** scrape Instagram/TikTok directly and does not bypass private accounts, authentication, CAPTCHAs, DRM, rate limits or security controls. This is intentional: TikTok's current Terms prohibit automated scraping/crawling/exporting unless approved in writing, so an arbitrary-profile scraper would not be a responsible production implementation. Use only a provider/API that you are authorized to use for the relevant content and platform.
-
-## Stack
-
-- Next.js App Router
-- TypeScript
-- React
-- Zod validation
+- Next.js App Router + TypeScript
+- Vercel-ready API routes
+- External provider/worker for long-running media acquisition
 - Upstash Redis rate limiting
-- Vercel-ready configuration
-- Provider adapter for long-running media jobs
+- Zod validation
+- Signed job capability tokens
+- Provider download-host allowlist
+- Short-lived provider download URLs
+- 50 files per ZIP
+- 5 ZIPs recommended per operation
+- Configurable resource-safety ceiling (250 files by default)
+- CI build/typecheck on GitHub Actions
 
-## Setup
+## Important platform limitation
+
+Saver does not scrape platforms directly and does not bypass private accounts, login, CAPTCHA, DRM, rate limits, or other access controls.
+
+Current official TikTok Display APIs require user authorization and are designed to expose profile/video metadata and embeds; they are not a general anonymous public-profile downloader. citeturn0search0turn0search1
+
+Therefore the acquisition provider must be separately authorized for the exact platform/content workflow. Do not deploy a random scraping endpoint and assume it is compliant.
+
+## Local setup
 
 ```bash
 npm install
 cp .env.example .env.local
+npm run typecheck
+npm run build
 npm run dev
 ```
 
-Configure `MEDIA_PROVIDER_URL` and `MEDIA_PROVIDER_TOKEN` according to `docs/provider-contract.md`. Configure Upstash variables in production so rate limiting is distributed across Vercel instances.
+## Required production environment
 
-## Production
+```text
+MEDIA_PROVIDER_URL=
+MEDIA_PROVIDER_TOKEN=
+MEDIA_DOWNLOAD_HOSTS=
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
+JOB_ACCESS_SECRET=
+MAX_FILES_PER_OPERATION=250
+NEXT_PUBLIC_APP_URL=https://your-domain.example
+```
 
-Deploy the repository to Vercel, add all environment variables, and use a production provider that complies with the applicable platform terms and law. Vercel Functions support longer execution times on eligible plans, but Saver keeps the long-running media job outside the request lifecycle through the provider contract.
+`JOB_ACCESS_SECRET` must contain at least 32 random characters.
 
-## Security checklist
+## Production checks
 
-- HTTPS-only input validation
-- strict source allowlist
-- no user credentials
-- no arbitrary server-side URL fetching
-- provider isolation
-- rate limiting
-- bounded ZIP/file counts
-- short-lived download URLs
-- structured provider job polling
-- safe error messages without secrets
-- no client-side secret exposure
+Open:
 
-## Platform notice
+```text
+/api/health
+```
 
-Users remain responsible for having the right to download and retain content. Platform availability and permitted access can change; the provider must enforce current platform requirements.
+A healthy production configuration returns HTTP 200 with all required configuration flags set to true.
+
+## Deployment
+
+1. Import the repository into Vercel.
+2. Add all production environment variables.
+3. Deploy.
+4. Confirm `/api/health` returns 200.
+5. Run a real provider integration test with content you are authorized to process.
+
+Vercel Functions have finite request durations, so Saver keeps the frontend/API request short and delegates long-running acquisition to the provider/worker. Vercel documents the current duration limits and longer-running options for paid plans. citeturn0search3turn0search10
+
+## Legal responsibility
+
+The operator is responsible for rights, platform terms, privacy, retention, and lawful use of downloaded content. Saver intentionally refuses private profiles and access-control bypasses.
