@@ -7,33 +7,26 @@ import { issueJobToken } from "@/lib/job-token";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MAX_BODY_BYTES = 16_384;
+const MAX_BODY_BYTES = 16384;
 
-function clientIp(req: NextRequest): string {
-  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-    || req.headers.get("x-real-ip")
-    || "unknown";
+function ip(req: NextRequest) {
+  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
 }
 
 export async function POST(req: NextRequest) {
-  const ip = clientIp(req);
-
   try {
-    if (!(await enforceRateLimit(`create:${ip}`, 10, "1 m"))) {
+    const client = ip(req);
+    if (!(await enforceRateLimit("create:" + client, 10, "1 m"))) {
       return NextResponse.json({ error: "Trop de demandes. Réessayez dans un instant." }, { status: 429 });
     }
 
-    const contentLength = Number(req.headers.get("content-length") ?? 0);
-    if (contentLength > MAX_BODY_BYTES) {
-      return NextResponse.json({ error: "Requête trop volumineuse." }, { status: 413 });
-    }
-
+    const length = Number(req.headers.get("content-length") ?? 0);
+    if (length > MAX_BODY_BYTES) return NextResponse.json({ error: "Requête trop volumineuse." }, { status: 413 });
     if (!req.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
       return NextResponse.json({ error: "Content-Type invalide." }, { status: 415 });
     }
 
-    const body = await req.json();
-    const parsed = schema.safeParse(body);
+    const parsed = schema.safeParse(await req.json());
     if (!parsed.success) return NextResponse.json({ error: "URL invalide." }, { status: 400 });
 
     const source = classify(parsed.data.url);
@@ -50,11 +43,8 @@ export async function POST(req: NextRequest) {
       }
       return NextResponse.json({ error: "Le service de téléchargement est momentanément indisponible." }, { status: error.status });
     }
-    if (error instanceof Error && error.message === "RATE_LIMIT_NOT_CONFIGURED") {
-      return NextResponse.json({ error: "Service non configuré pour la production." }, { status: 503 });
-    }
-    if (error instanceof Error && error.message === "JOB_ACCESS_SECRET_MISSING") {
-      return NextResponse.json({ error: "Configuration de sécurité incomplète." }, { status: 503 });
+    if (error instanceof Error && ["RATE_LIMIT_NOT_CONFIGURED", "JOB_ACCESS_SECRET_MISSING"].includes(error.message)) {
+      return NextResponse.json({ error: "Configuration de production incomplète." }, { status: 503 });
     }
     return NextResponse.json({ error: "Service momentanément indisponible." }, { status: 503 });
   }
