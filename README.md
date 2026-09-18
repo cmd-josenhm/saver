@@ -21,7 +21,7 @@ Saver is a mobile-first Next.js/TypeScript web application for processing **publ
 
 Saver does not scrape platforms directly and does not bypass private accounts, login, CAPTCHA, DRM, rate limits, or other access controls.
 
-Current official TikTok Display APIs require user authorization and are designed to expose profile/video metadata and embeds; they are not a general anonymous public-profile downloader. citeturn0search0turn0search1
+Current official TikTok Display APIs require user authorization and are designed to expose profile/video metadata and embeds; they are not a general anonymous public-profile downloader. [TikTok Display API](https://developers.tiktok.com/docs/en/display-api-overview) and [TikTok Get Started](https://developers.tiktok.com/docs/en/display-api-get-started).
 
 Therefore the acquisition provider must be separately authorized for the exact platform/content workflow. Do not deploy a random scraping endpoint and assume it is compliant.
 
@@ -68,7 +68,7 @@ A healthy production configuration returns HTTP 200 with all required configurat
 4. Confirm `/api/health` returns 200.
 5. Run a real provider integration test with content you are authorized to process.
 
-Vercel Functions have finite request durations, so Saver keeps the frontend/API request short and delegates long-running acquisition to the provider/worker. Vercel documents the current duration limits and longer-running options for paid plans. citeturn0search3turn0search10
+Vercel Functions have finite request durations, so Saver keeps the frontend/API request short and delegates long-running acquisition to the provider/worker. Vercel documents the current duration limits and longer-running options for paid plans. [Vercel Functions limits](https://vercel.com/docs/functions/limitations) and its long-running Functions documentation.
 
 ## Legal responsibility
 
