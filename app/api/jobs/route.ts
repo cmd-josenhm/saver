@@ -38,8 +38,14 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("job_create", error);
     if (error instanceof ProviderError) {
-      if (error.code === "PRIVATE_PROFILE") {
-        return NextResponse.json({ error: "Ce profil est privé. Saver ne peut pas télécharger son contenu." }, { status: 403 });
+      if (error.code === "PRIVATE_PROFILE" || error.code === "AUTH_REQUIRED") {
+        return NextResponse.json({ error: "Ce contenu nécessite une autorisation ou provient d'un profil privé. Saver ne peut pas contourner cet accès." }, { status: 403 });
+      }
+      if (error.code === "NO_MEDIA") {
+        return NextResponse.json({ error: "Aucun contenu public compatible n'a été trouvé." }, { status: 404 });
+      }
+      if (error.code === "RATE_LIMITED") {
+        return NextResponse.json({ error: "La plateforme source limite momentanément cette opération. Réessayez plus tard." }, { status: 429 });
       }
       return NextResponse.json({ error: "Le service de téléchargement est momentanément indisponible." }, { status: error.status });
     }
